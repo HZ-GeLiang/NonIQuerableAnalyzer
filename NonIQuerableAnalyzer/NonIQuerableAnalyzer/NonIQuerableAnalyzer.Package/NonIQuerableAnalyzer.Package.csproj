@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PackageId>NonIQuerableAnalyzer</PackageId>
+		<PackageVersion>1.0.0.0</PackageVersion>
+		<Authors>GeLiang</Authors>
+		<!--<Company>GeLiang</Company>-->
+		<Copyright>Copyright (c) GeLiang</Copyright>
+		<!--
+		<PackageLicenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</PackageLicenseUrl>
+		<PackageIconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</PackageIconUrl>
+		-->
+		<PackageProjectUrl>https://github.com/HZ-GeLiang/NonIQuerableAnalyzer</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/HZ-GeLiang/NonIQuerableAnalyzer</RepositoryUrl>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<Description>Prevents IQueryable from using parent class extension methods.</Description>
+		<!--<PackageReleaseNotes>Summary of changes made in this release of the package.</PackageReleaseNotes>-->
+		<PackageTags>NonIQuerableAnalyzer, analyzers,IQuerable</PackageTags>
+		<DevelopmentDependency>true</DevelopmentDependency>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\NonIQuerableAnalyzer.CodeFixes\NonIQuerableAnalyzer.CodeFixes.csproj" />
+		<ProjectReference Include="..\NonIQuerableAnalyzer\NonIQuerableAnalyzer.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="tools\*.ps1" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<Target Name="_AddAnalyzersToOutput">
+		<ItemGroup>
+			<TfmSpecificPackageFile Include="$(OutputPath)\NonIQuerableAnalyzer.dll" PackagePath="analyzers/dotnet/cs" />
+			<TfmSpecificPackageFile Include="$(OutputPath)\NonIQuerableAnalyzer.CodeFixes.dll" PackagePath="analyzers/dotnet/cs" />
+		</ItemGroup>
+	</Target>
+
+</Project>
