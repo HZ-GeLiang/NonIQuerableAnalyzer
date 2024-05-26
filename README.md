@@ -60,3 +60,6 @@ class Program
 }
 ```
 
+![image](https://github.com/HZ-GeLiang/NonIQuerableAnalyzer/assets/16562680/294bd349-8935-47af-98b5-2e7e8c46b744)
+
+
