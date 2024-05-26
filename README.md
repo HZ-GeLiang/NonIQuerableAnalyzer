@@ -3,7 +3,7 @@ Prevents IQueryable from using parent class extension methods
 
 NuGet: https://www.nuget.org/packages/NonIQuerableAnalyzer
 
-In EF Core 3.1, if the IQuerable object uses an IEnumerable object written by oneself, it will prompt untranslatable statements at runtime. To solve this situation, it is necessary to detect it in advance during the compilation phase
+In EF Core 3.1, if the IQuerable object uses its own IEnumerable extension method, it will prompt untranslatable statements at runtime. To solve this situation, it is necessary to detect it in advance during the compilation phase
 
 # How to use it
 
