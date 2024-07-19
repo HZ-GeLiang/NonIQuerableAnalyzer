@@ -43,7 +43,6 @@ class Program
 ");
         }
 
-
         [TestMethod]
         public async Task Test_OnClass()
         {

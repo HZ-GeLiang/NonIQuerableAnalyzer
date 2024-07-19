@@ -23,7 +23,6 @@ namespace NonIQuerableAnalyzer
 
         //public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
 
-
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(
               "InvalidIQueryableMethodUsage",
               "IQueryable should not use NonIQueryable methods",
@@ -81,7 +80,6 @@ namespace NonIQuerableAnalyzer
                 return; //不是静态方法
             }
 
-
             // Check if the method has HasNonIQueryableAttribute
             if (HasNonIQueryableAttribute(methodSymbol) == false)
             {
@@ -97,9 +95,7 @@ namespace NonIQuerableAnalyzer
                 var diagnostic = Diagnostic.Create(Rule, invocationExpr.GetLocation(), methodSymbol.Name);
                 context.ReportDiagnostic(diagnostic);
             }
-
         }
-
 
         private static bool HasNonIQueryableAttribute(IMethodSymbol methodSymbol)
         {

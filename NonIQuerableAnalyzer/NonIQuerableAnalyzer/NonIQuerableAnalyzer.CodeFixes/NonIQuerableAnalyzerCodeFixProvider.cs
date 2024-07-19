@@ -4,9 +4,6 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Rename;
-using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -18,18 +15,18 @@ namespace NonIQuerableAnalyzer
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NonIQuerableAnalyzerCodeFixProvider)), Shared]
     public class NonIQuerableAnalyzerCodeFixProvider : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds
+        public override sealed ImmutableArray<string> FixableDiagnosticIds
         {
             get { return ImmutableArray.Create(NonIQuerableAnalyzerAnalyzer.DiagnosticId); }
         }
 
-        public sealed override FixAllProvider GetFixAllProvider()
+        public override sealed FixAllProvider GetFixAllProvider()
         {
             // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
             return WellKnownFixAllProviders.BatchFixer;
         }
 
-        public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
+        public override sealed async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
