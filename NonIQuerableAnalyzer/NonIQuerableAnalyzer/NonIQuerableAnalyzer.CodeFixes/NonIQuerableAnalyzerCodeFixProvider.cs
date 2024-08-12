@@ -17,7 +17,7 @@ namespace NonIQuerableAnalyzer
     {
         public override sealed ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(NonIQuerableAnalyzerAnalyzer.DiagnosticId); }
+            get { return ImmutableArray.Create(NonIQuerable_Analyzer.DiagnosticId); }
         }
 
         public override sealed FixAllProvider GetFixAllProvider()

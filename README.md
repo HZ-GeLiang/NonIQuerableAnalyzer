@@ -21,7 +21,6 @@ internal class NonIQueryableAttribute : Attribute { }
 ## case1 : apply a Method
 
 ```
-
 public static class EnumerableExtensions
 {
     [NonIQueryableAttribute]
@@ -35,8 +34,7 @@ public static class EnumerableExtensions
 
 ## case2 :apply all Method
 
-```
-
+```c#
 [NonIQueryableAttribute]
 public static class EnumerableExtensions
 {
@@ -51,18 +49,29 @@ public static class EnumerableExtensions
 
 ## Misuse
 
-```
+### case1 
+
+```c#
 class Program
 {
     static void Main()
     {
-        IQueryable<int> queryableNumbers = null;
-        var queryableResult = queryableNumbers.OrderByExpression(1);  // error
+        IQueryable<int> query = null;
+        var queryableResult = query.OrderByExpression(1);  // error
     }
 }
 ```
 
 ![image](https://github.com/HZ-GeLiang/NonIQuerableAnalyzer/assets/16562680/294bd349-8935-47af-98b5-2e7e8c46b744)
+
+### case2
+
+```c#
+{
+    IQueryable<Stu> query = null;
+    query.Where(a => a.Name.IsEqualAnyIgnoreCase("abc")); //error
+}
+```
 
 
 ![image](https://github.com/user-attachments/assets/b5ba045c-a268-466a-813d-2c5e53301f4c)

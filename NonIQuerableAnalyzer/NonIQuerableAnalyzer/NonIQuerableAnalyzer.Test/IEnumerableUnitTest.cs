@@ -1,13 +1,13 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using VerifyCS = NonIQuerableAnalyzer.Test.CSharpCodeFixVerifier<
-    NonIQuerableAnalyzer.NonIQuerableAnalyzerAnalyzer,
+    NonIQuerableAnalyzer.NonIQuerable_Analyzer,
     NonIQuerableAnalyzer.NonIQuerableAnalyzerCodeFixProvider>;
 
 namespace NonIQuerableAnalyzer.Test
 {
     [TestClass]
-    public class NonIQuerableAnalyzerUnitTest
+    public class IEnumerableUnitTest
     {
         [TestMethod]
         public async Task Test_OnMethod()
@@ -36,8 +36,8 @@ class Program
 {
     static void Main()
     {
-        IQueryable<int> queryableNumbers = null;
-        var queryableResult = queryableNumbers.OrderByExpression(1);
+        IQueryable<int> query = null;
+        var queryableResult = query.OrderByExpression(1);
     }
 }
 ");
@@ -70,8 +70,8 @@ class Program
 {
     static void Main()
     {
-        IQueryable<int> queryableNumbers = null;
-        var queryableResult = queryableNumbers.OrderByExpression(1);
+        IQueryable<int> query = null;
+        var queryableResult = query.OrderByExpression(1);
     }
 }
 ");

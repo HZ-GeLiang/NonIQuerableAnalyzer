@@ -8,7 +8,7 @@ using System.Linq;
 namespace NonIQuerableAnalyzer
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class NonIQuerableAnalyzerAnalyzer : DiagnosticAnalyzer
+    public class NonIQuerable_Analyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "NonIQuerableAnalyzer";
 
@@ -92,9 +92,66 @@ namespace NonIQuerableAnalyzer
             // Check if the instance type is IQueryable<>
             if (IsIQueryable(receiverType))
             {
+                //针对 IEnumerableUnitTest
                 var diagnostic = Diagnostic.Create(Rule, invocationExpr.GetLocation(), methodSymbol.Name);
                 context.ReportDiagnostic(diagnostic);
             }
+
+            #region 针对 StringUnitTest
+
+            //var parent_receiverType = GetRootReceiverType(memberAccessExpr.Expression, context.SemanticModel);//NamedType Program.Stu
+
+            // 获取调用链中的父级InvocationExpression（即 .Where 之类的方法）
+            var parentInvocationExpr = GetParentInvocation(invocationExpr);
+            if (parentInvocationExpr != null)
+            {
+                // 获取该父级的对象类型
+                var parentType = GetParentInvocationType(parentInvocationExpr, context.SemanticModel);
+                // 检查对象类型是否为 IQueryable<T>
+                if (IsIQueryable(parentType))
+                {
+                    var diagnostic = Diagnostic.Create(Rule, invocationExpr.GetLocation(), methodSymbol.Name);
+                    context.ReportDiagnostic(diagnostic);
+                }
+            }
+
+            #endregion
+        }
+
+        // 向上查找，获取父级的 InvocationExpressionSyntax
+        private InvocationExpressionSyntax GetParentInvocation(SyntaxNode node)
+        {
+            var current = node.Parent;
+            while (current != null && !(current is InvocationExpressionSyntax))
+            {
+                current = current.Parent;
+            }
+            return current as InvocationExpressionSyntax;
+        }
+
+        private ITypeSymbol GetParentInvocationType(InvocationExpressionSyntax invocationExpr, SemanticModel semanticModel)
+        {
+            var memberAccessExpr = invocationExpr.Expression as MemberAccessExpressionSyntax;
+            if (memberAccessExpr == null)
+            {
+                return null;
+            }
+
+            var whereObjectExpr = memberAccessExpr.Expression;
+            return semanticModel.GetTypeInfo(whereObjectExpr).Type;
+        }
+
+        // 获取最上层的接收者类型 (链式调用中的最开始的对象类型) ,GPT给的方法,没验证过
+        private ITypeSymbol GetRootReceiverType(ExpressionSyntax expression, SemanticModel semanticModel)
+        {
+            var currentExpr = expression;
+
+            while (currentExpr is MemberAccessExpressionSyntax memberAccess)
+            {
+                currentExpr = memberAccess.Expression;
+            }
+            var type = semanticModel.GetTypeInfo(currentExpr).Type;
+            return type;
         }
 
         private static bool HasNonIQueryableAttribute(IMethodSymbol methodSymbol)
@@ -136,11 +193,24 @@ namespace NonIQuerableAnalyzer
                 return false;
             }
 
+            var typeStr = type.OriginalDefinition.ToString();
             // Check if the type itself is IQueryable<>
-            if (type.OriginalDefinition.ToString() == "System.Linq.IQueryable<T>")
+            if (string.Equals(typeStr, "System.Linq.IQueryable<T>", System.StringComparison.Ordinal) == true ||
+                string.Equals(typeStr, "SqlSugar.ISugarQueryable<T>", System.StringComparison.Ordinal) == true
+                )
             {
+                //如果是 System.Linq.IQueryable<T> 对象调用了某个方法
+                //query.OrderByExpression(1);
                 return true;
             }
+
+            //if (type.OriginalDefinition.ToString() == "string")
+            //{
+            //    //a.Name.IsEqualAnyIgnoreCase("abc")
+            //    return false;
+            //}
+
+            //如果 当前方法的parent 也是 System.Linq.IQueryable<T>
 
             /*
             // Check if any of the implemented interfaces is IQueryable<>

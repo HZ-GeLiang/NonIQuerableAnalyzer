@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
@@ -17,8 +17,8 @@
 		<PackageLicenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</PackageLicenseUrl>
 		<PackageIconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</PackageIconUrl>
 		-->
-		<PackageProjectUrl>https://github.com/HZ-GeLiang/NonIQuerableAnalyzer</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/HZ-GeLiang/NonIQuerableAnalyzer</RepositoryUrl>
+		<PackageProjectUrl>https://gitee.com/hzgel/NonIQuerableAnalyzer.git</PackageProjectUrl>
+		<RepositoryUrl>https://gitee.com/hzgel/NonIQuerableAnalyzer.git</RepositoryUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<Description>Prevents IQueryable from using parent class extension methods.</Description>
 		<!--<PackageReleaseNotes>Summary of changes made in this release of the package.</PackageReleaseNotes>-->
