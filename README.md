@@ -14,8 +14,8 @@ In EF Core 3.1, if the IQuerable object uses its own IEnumerable extension metho
 ```
 using System;
 
-[AttributeUsage(AttributeTargets.Struct)]
-internal class NonCopyableAttribute : Attribute { }
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+internal class NonIQueryableAttribute : Attribute { }
 ```
 
 ## case1 : apply a Method
@@ -49,7 +49,7 @@ public static class EnumerableExtensions
 
 
 
-## misuse
+## Misuse
 
 ```
 class Program
@@ -63,5 +63,4 @@ class Program
 ```
 
 ![image](https://github.com/HZ-GeLiang/NonIQuerableAnalyzer/assets/16562680/294bd349-8935-47af-98b5-2e7e8c46b744)
-
 
