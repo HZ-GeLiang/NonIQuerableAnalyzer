@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -64,8 +65,8 @@ namespace NonIQuerableAnalyzer
 
         private void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
         {
-            var invocationExpr = (InvocationExpressionSyntax)context.Node;
-            var memberAccessExpr = invocationExpr.Expression as MemberAccessExpressionSyntax;
+            InvocationExpressionSyntax invocationExpr = (InvocationExpressionSyntax)context.Node;
+            MemberAccessExpressionSyntax memberAccessExpr = invocationExpr.Expression as MemberAccessExpressionSyntax;
             if (memberAccessExpr == null)
             {
                 return;
@@ -102,16 +103,28 @@ namespace NonIQuerableAnalyzer
             //var parent_receiverType = GetRootReceiverType(memberAccessExpr.Expression, context.SemanticModel);//NamedType Program.Stu
 
             // 获取调用链中的父级InvocationExpression（即 .Where 之类的方法）
-            var parentInvocationExpr = GetParentInvocation(invocationExpr);
+            InvocationExpressionSyntax parentInvocationExpr = GetParentInvocation(invocationExpr);
             if (parentInvocationExpr != null)
             {
                 // 获取该父级的对象类型
                 var parentType = GetParentInvocationType(parentInvocationExpr, context.SemanticModel);
-                // 检查对象类型是否为 IQueryable<T>
+                // 检查父级的对象类型 是否为 IQueryable<T>
                 if (IsIQueryable(parentType))
                 {
-                    var diagnostic = Diagnostic.Create(Rule, invocationExpr.GetLocation(), methodSymbol.Name);
-                    context.ReportDiagnostic(diagnostic);
+                    //判断 memberAccessExpr 在 父级方法参数中的具体类型
+
+                    // 获取参数信息
+                    var (index, type) = GetArgumentIndexAndType(parentInvocationExpr, memberAccessExpr, context.SemanticModel);
+
+                    if (index != -1)
+                    {
+                        if (IsExpression(type))
+                        {
+                            var diagnostic = Diagnostic.Create(Rule, invocationExpr.GetLocation(), methodSymbol.Name);
+                            context.ReportDiagnostic(diagnostic);
+                        }
+                        //Console.WriteLine($"参数索引: {index}, 参数类型: {type}");
+                    }
                 }
             }
 
@@ -223,6 +236,82 @@ namespace NonIQuerableAnalyzer
             }
             */
             return false;
+        }
+
+        private bool IsExpression(ITypeSymbol type)
+        {
+            if (type == null)
+            {
+                return false;
+            }
+
+            var typeStr = type.OriginalDefinition.ToString();
+            if (string.Equals(typeStr, "System.Linq.Expressions.Expression<TDelegate>", System.StringComparison.Ordinal) == true)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        // 获取参数在父级Invocation中的索引和类型
+        private (int index, ITypeSymbol type) GetArgumentIndexAndType(InvocationExpressionSyntax parentInvocationExpr, MemberAccessExpressionSyntax memberAccessExpr, SemanticModel semanticModel)
+        {
+            var argumentList = parentInvocationExpr.ArgumentList;
+            if (argumentList == null)
+            {
+                return (-1, null);
+            }
+
+            var arguments = argumentList.Arguments;
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                var argumentExpr = arguments[i].Expression;
+
+                //// 检查当前参数是否匹配 memberAccessExpr
+                //if (argumentExpr == memberAccessExpr)
+                //{
+                //    var argumentType = semanticModel.GetTypeInfo(argumentExpr).Type;
+                //    return (i, argumentType);
+                //}
+
+                // 递归检查参数表达式是否包含 memberAccessExpr
+                if (ContainsExpression(argumentExpr, memberAccessExpr))
+                {
+                    // 如果是 lambda 表达式，则检查它是否表达式树的一部分
+                    if (argumentExpr is LambdaExpressionSyntax lambdaExpression)
+                    {
+                        // 获取lambda表达式的类型（通常是Expression<Func<T, bool>> 或者 Func<T, bool>）
+                        var lambdaType = semanticModel.GetTypeInfo(lambdaExpression).ConvertedType;
+
+                        // 检查类型是否是表达式树
+                        if (lambdaType != null && lambdaType.Name == "Expression")
+                        {
+                            return (i, lambdaType);
+                        }
+
+                        // 处理其他情况
+                        var returnType = semanticModel.GetTypeInfo(lambdaExpression.Body).Type;
+                        return (i, returnType);
+                    }
+
+                    // 尝试直接获取参数的类型
+                    var argumentType = semanticModel.GetTypeInfo(argumentExpr).Type;
+                    if (argumentType != null)
+                    {
+                        return (i, argumentType);
+                    }
+                }
+            }
+
+            // 如果没有匹配到，返回 -1 和 null
+            return (-1, null);
+        }
+
+        // 检查某个表达式是否包含特定的子表达式
+        private bool ContainsExpression(SyntaxNode root, SyntaxNode target)
+        {
+            return root.DescendantNodesAndSelf().Any(node => node == target);
         }
     }
 }
