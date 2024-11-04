@@ -11,7 +11,7 @@ namespace NonIQuerableAnalyzer
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NonIQuerable_Analyzer : DiagnosticAnalyzer
     {
-        public const string DiagnosticId = "NonIQuerableAnalyzer";
+        public const string DiagnosticId = "NonIQuerable";
 
         //// You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
         //// See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Localizing%20Analyzers.md for more on localization
@@ -24,8 +24,10 @@ namespace NonIQuerableAnalyzer
 
         //public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
 
+
+        //Invalid IQueryable Method Usage
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(
-              "InvalidIQueryableMethodUsage",
+              DiagnosticId,
               "IQueryable should not use NonIQueryable methods",
               "IQueryable should not use method '{0}' marked with NonIQueryableAttribute",
               "Usage",
