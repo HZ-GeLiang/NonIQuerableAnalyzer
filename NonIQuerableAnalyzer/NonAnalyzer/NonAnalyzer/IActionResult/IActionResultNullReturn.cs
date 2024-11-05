@@ -9,6 +9,7 @@ namespace NonAnalyzer
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Diagnostics;
     using System.Collections.Immutable;
+    using System.Linq;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class IActionResultNullReturnAnalyzer : DiagnosticAnalyzer
@@ -34,54 +35,56 @@ namespace NonAnalyzer
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(AnalyzeNode, SyntaxKind.ReturnStatement);
+            context.RegisterSyntaxNodeAction(AnalyzeReturnStatements, SyntaxKind.ReturnStatement);
         }
 
-        private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeReturnStatements(SyntaxNodeAnalysisContext context)
         {
             var returnStatement = (ReturnStatementSyntax)context.Node;
+            var methodDeclaration = returnStatement.FirstAncestorOrSelf<MethodDeclarationSyntax>();
 
-            //// 确保诊断逻辑匹配测试代码中的返回模式
-            //if (returnStatement.Expression.IsKind(SyntaxKind.NullLiteralExpression))
-            //{
-            //    context.ReportDiagnostic(Diagnostic.Create(DiagnosticRule, returnStatement.GetLocation()));
-            //}
-
-            // 检查返回的是否是 null
-            if (returnStatement.Expression?.IsKind(SyntaxKind.NullLiteralExpression) != true)
-            {
+            if (methodDeclaration == null)
                 return;
-            }
 
-            // 获取包含此 return 语句的方法声明
-            var containingMethod = returnStatement.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-            if (containingMethod == null)
-            {
+            var returnType = context.SemanticModel.GetTypeInfo(methodDeclaration.ReturnType).ConvertedType;
+
+            if (returnType == null)
                 return;
-            }
 
-            // 获取方法的返回类型
-            var methodReturnType = context.SemanticModel.GetTypeInfo(containingMethod.ReturnType).Type;
-            if (methodReturnType == null)
-            {
-                return;
-            }
-
-            // 获取 IActionResult 的类型引用
             var iActionResultType = context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.IActionResult");
+            //var taskType = "System.Threading.Tasks.Task<TResult>";
 
-            if (iActionResultType == null)
+            var taskType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"); // 获取泛型 Task<T> 类型
+
+            // 提取 Task<T> 的泛型类型参数 T
+            ITypeSymbol innerType = returnType;
+
+            //if (returnType.OriginalDefinition.ToString() == taskType)
+            if (SymbolEqualityComparer.Default.Equals(returnType.OriginalDefinition, taskType))
             {
-                return;
+                // 如果是 Task<T>，提取 T
+                if (returnType is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1)
+                {
+                    innerType = namedType.TypeArguments[0];
+                }
             }
 
-            // 检查方法的返回类型是否为 IActionResult 或其派生类型
-            if (methodReturnType.Equals(iActionResultType) || methodReturnType.AllInterfaces.Contains(iActionResultType))
+            // 检查是否为 IActionResult 或其实现类
+            bool isIActionResultOrImplementation = innerType == iActionResultType || innerType.ImplementsInterface(iActionResultType);
+
+            if (isIActionResultOrImplementation &&
+                returnStatement.Expression.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                // 如果返回类型是 IActionResult 且返回了 null，报告诊断
-                var diagnostic = Diagnostic.Create(Rule, returnStatement.GetLocation());
-                context.ReportDiagnostic(diagnostic);
+                context.ReportDiagnostic(Diagnostic.Create(Rule, returnStatement.GetLocation(), innerType.Name));
             }
+        }
+    }
+
+    public static class SymbolExtensions
+    {
+        public static bool ImplementsInterface(this ITypeSymbol type, INamedTypeSymbol interfaceType)
+        {
+            return type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, interfaceType));
         }
     }
 }

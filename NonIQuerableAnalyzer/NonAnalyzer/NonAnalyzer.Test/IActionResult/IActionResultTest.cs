@@ -17,6 +17,37 @@ namespace NonAnalyzer.Test
         //}
 
         [TestMethod]
+        public async Task Test_Task_IActionResult()
+        {
+            var testCode = @"
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    public async Task<IActionResult> GetFile1()
+    {
+        await Task.Delay(1);
+        return null; // 这里将触发分析器的警告
+    }
+}";
+
+            //await VerifyCS.VerifyAnalyzerAsync(@"");
+
+            var test = new VerifyCS.Test
+            {
+                TestCode = testCode,
+                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
+            };
+
+            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
+            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
+
+            await test.RunAsync();
+        }
+
+        [TestMethod]
         public async Task Test_IActionResult()
         {
             var testCode = @"
@@ -26,13 +57,69 @@ using System.Threading.Tasks;
 
 class Program
 {
-    static void Main()
+    public IActionResult GetFile2()
     {
+        return null; // 这里将触发分析器的警告
     }
+}";
 
-    public async Task<IActionResult> GetFile()
+            //await VerifyCS.VerifyAnalyzerAsync(@"");
+
+            var test = new VerifyCS.Test
+            {
+                TestCode = testCode,
+                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
+            };
+
+            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
+            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
+
+            await test.RunAsync();
+        }
+
+        [TestMethod]
+        public async Task Test_Task_FileStreamResult()
+        {
+            var testCode = @"
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    public async Task<FileStreamResult> GetFile3()
     {
         await Task.Delay(1);
+        return null; // 这里将触发分析器的警告
+    }
+}";
+
+            //await VerifyCS.VerifyAnalyzerAsync(@"");
+
+            var test = new VerifyCS.Test
+            {
+                TestCode = testCode,
+                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
+            };
+
+            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
+            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
+
+            await test.RunAsync();
+        }
+
+        [TestMethod]
+        public async Task Test_FileStreamResult()
+        {
+            var testCode = @"
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    public FileStreamResult GetFile4()
+    {
         return null; // 这里将触发分析器的警告
     }
 }";
