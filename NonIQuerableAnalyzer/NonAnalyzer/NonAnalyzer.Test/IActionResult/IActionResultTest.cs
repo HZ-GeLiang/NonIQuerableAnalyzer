@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
@@ -18,8 +19,25 @@ namespace NonAnalyzer.Test
         //    return null; // 这里将触发分析器的警告
         //}
 
+        private VerifyCS.Test GetTest(string testCode)
+        {
+            var test = new VerifyCS.Test
+            {
+                TestCode = testCode,
+                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
+            };
+
+            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
+            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
+
+            //当前行的程序集应该和上面是一样的, 实测下来: 如果没有不写这行, type.TypeKind 为 TypeKind.Error.
+            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.FileStreamResult).Assembly);
+
+            return test;
+        }
+
         [TestMethod]
-        public async Task Test_Task_IActionResult()
+        public async Task Test1_Task_IActionResult()
         {
             var testCode = @"
 using Microsoft.AspNetCore.Mvc;
@@ -34,23 +52,12 @@ class Program
         return null; // 这里将触发分析器的警告
     }
 }";
-
-            //await VerifyCS.VerifyAnalyzerAsync(@"");
-
-            var test = new VerifyCS.Test
-            {
-                TestCode = testCode,
-                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
-            };
-
-            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
-            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
-
+            var test = GetTest(testCode);
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task Test_IActionResult()
+        public async Task Test2_IActionResult()
         {
             var testCode = @"
 using Microsoft.AspNetCore.Mvc;
@@ -65,22 +72,12 @@ class Program
     }
 }";
 
-            //await VerifyCS.VerifyAnalyzerAsync(@"");
-
-            var test = new VerifyCS.Test
-            {
-                TestCode = testCode,
-                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
-            };
-
-            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
-            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
-
+            var test = GetTest(testCode);
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task Test_Task_FileStreamResult()
+        public async Task Test3_Task_FileStreamResult()
         {
             //需要确保当前程序集中有 FileStreamResult
             var testCode = @"
@@ -97,22 +94,12 @@ class Program
     }
 }";
 
-            //await VerifyCS.VerifyAnalyzerAsync(@"");
-
-            var test = new VerifyCS.Test
-            {
-                TestCode = testCode,
-                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
-            };
-
-            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
-            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
-
+            var test = GetTest(testCode);
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task Test_FileStreamResult()
+        public async Task Test4_FileStreamResult()
         {
             var testCode = @"
 using Microsoft.AspNetCore.Mvc;
@@ -127,25 +114,28 @@ class Program
     }
 }";
 
-            //await VerifyCS.VerifyAnalyzerAsync(@"");
-
-            var test = new VerifyCS.Test
-            {
-                TestCode = testCode,
-                ReferenceAssemblies = ReferenceAssemblies.NetCore.NetCoreApp31, // 使用 .NET Core 3.1 参考程序集
-            };
-
-            // 添加 `Microsoft.AspNetCore.Mvc` 依赖程序集
-            test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
-
+            var test = GetTest(testCode);
             await test.RunAsync();
         }
 
-        public FileStreamResult GetFile4()
+        [TestMethod]
+        public async Task Test5_FileStreamResult_return_default()
         {
-            //这个方法是用来需要确保当前test中 FileStreamResult 类型
-            //如果没有 FileStreamResult 类型, 那么 type.TypeKind 为 TypeKind.Error
-            return null;
+            var testCode = @"
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    public FileStreamResult GetFile5()
+    {
+        return default; // 这里将触发分析器的警告
+    }
+}";
+
+            var test = GetTest(testCode);
+            await test.RunAsync();
         }
     }
 }

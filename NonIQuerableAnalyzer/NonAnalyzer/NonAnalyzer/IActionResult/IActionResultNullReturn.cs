@@ -44,19 +44,38 @@ namespace NonAnalyzer
             var methodDeclaration = returnStatement.FirstAncestorOrSelf<MethodDeclarationSyntax>();
 
             if (methodDeclaration == null)
+            {
                 return;
+            }
 
-            var returnType = context.SemanticModel.GetTypeInfo(methodDeclaration.ReturnType).ConvertedType;
-
+            ITypeSymbol returnType = context.SemanticModel.GetTypeInfo(methodDeclaration.ReturnType).ConvertedType;
             if (returnType == null)
+            {
                 return;
+            }
 
+            var isIActionResultOrImplementation = IsIActionResultOrImplementation(context, returnType, out ITypeSymbol innerType);
+
+            if (isIActionResultOrImplementation)
+            {
+                if (returnStatement.Expression.IsKind(SyntaxKind.NullLiteralExpression) ||
+                    returnStatement.Expression.IsKind(SyntaxKind.DefaultLiteralExpression)
+                    )
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(Rule, returnStatement.GetLocation(), innerType.Name));
+                }
+            }
+        }
+
+        private static bool IsIActionResultOrImplementation(SyntaxNodeAnalysisContext context, ITypeSymbol returnType, out ITypeSymbol innerType)
+        {
             //var taskType = "System.Threading.Tasks.Task<TResult>";
 
             var taskType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"); // 获取泛型 Task<T> 类型
 
             // 提取 Task<T> 的泛型类型参数 T
-            ITypeSymbol innerType = returnType;
+            //ITypeSymbol innerType = returnType;
+            innerType = returnType;
 
             //if (returnType.OriginalDefinition.ToString() == taskType)
             if (SymbolEqualityComparer.Default.Equals(returnType.OriginalDefinition, taskType))
@@ -81,11 +100,7 @@ namespace NonAnalyzer
             bool isIActionResultOrImplementation = innerType == iActionResultType || innerType.ImplementsInterface(iActionResultType);
 #endif
 
-            if (isIActionResultOrImplementation &&
-                returnStatement.Expression.IsKind(SyntaxKind.NullLiteralExpression))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, returnStatement.GetLocation(), innerType.Name));
-            }
+            return isIActionResultOrImplementation;
         }
     }
 

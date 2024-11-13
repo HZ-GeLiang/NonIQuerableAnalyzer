@@ -8,8 +8,8 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageId>NonIQuerableAnalyzer</PackageId>
-		<PackageVersion>1.1.1</PackageVersion>
+		<PackageId>NonAnalyzer</PackageId>
+		<PackageVersion>1.1.2.2</PackageVersion>
 		<Authors>GeLiang</Authors>
 		<!--<Company>GeLiang</Company>-->
 		<Copyright>Copyright (c) GeLiang</Copyright>
