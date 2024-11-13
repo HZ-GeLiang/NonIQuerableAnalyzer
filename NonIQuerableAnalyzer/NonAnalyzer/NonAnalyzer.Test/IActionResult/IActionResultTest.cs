@@ -1,5 +1,7 @@
-﻿using Microsoft.CodeAnalysis.Testing;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using VerifyCS = NonAnalyzer.Test.CSharpCodeFixVerifier<
     NonAnalyzer.IActionResultNullReturnAnalyzer,
@@ -80,6 +82,7 @@ class Program
         [TestMethod]
         public async Task Test_Task_FileStreamResult()
         {
+            //需要确保当前程序集中有 FileStreamResult
             var testCode = @"
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -136,6 +139,13 @@ class Program
             test.TestState.AdditionalReferences.Add(typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly);
 
             await test.RunAsync();
+        }
+
+        public FileStreamResult GetFile4()
+        {
+            //这个方法是用来需要确保当前test中 FileStreamResult 类型
+            //如果没有 FileStreamResult 类型, 那么 type.TypeKind 为 TypeKind.Error
+            return null;
         }
     }
 }

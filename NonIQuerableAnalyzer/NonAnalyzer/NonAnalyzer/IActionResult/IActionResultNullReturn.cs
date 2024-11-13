@@ -51,7 +51,6 @@ namespace NonAnalyzer
             if (returnType == null)
                 return;
 
-            var iActionResultType = context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.IActionResult");
             //var taskType = "System.Threading.Tasks.Task<TResult>";
 
             var taskType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1"); // 获取泛型 Task<T> 类型
@@ -70,7 +69,17 @@ namespace NonAnalyzer
             }
 
             // 检查是否为 IActionResult 或其实现类
+
+            var iActionResultType = context.Compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.IActionResult");
+#if DEBUG
+            bool isIActionResultOrImplementation = innerType == iActionResultType;
+            if (isIActionResultOrImplementation == false)
+            {
+                isIActionResultOrImplementation = innerType.ImplementsInterface(iActionResultType);
+            }
+#else
             bool isIActionResultOrImplementation = innerType == iActionResultType || innerType.ImplementsInterface(iActionResultType);
+#endif
 
             if (isIActionResultOrImplementation &&
                 returnStatement.Expression.IsKind(SyntaxKind.NullLiteralExpression))
@@ -84,7 +93,53 @@ namespace NonAnalyzer
     {
         public static bool ImplementsInterface(this ITypeSymbol type, INamedTypeSymbol interfaceType)
         {
-            return type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, interfaceType));
+            if (type == null || interfaceType == null)
+            {
+                return false;
+            }
+
+            if (type.TypeKind == TypeKind.Error || interfaceType.TypeKind == TypeKind.Error)
+            {
+                return false;
+            }
+
+            {
+                // 检查实现的接口
+                var result = type.AllInterfaces
+                    .Where(i => i.TypeKind != TypeKind.Error)  // 排除错误类型
+                    .Any(i => SymbolEqualityComparer.Default.Equals(i, interfaceType));
+
+                if (result)
+                {
+                    return true;
+                }
+            }
+
+            {
+                var result = type.AllInterfaces.Any(i =>
+                    SymbolEqualityComparer.Default.Equals(i, interfaceType) ||
+                    i.ToDisplayString() == interfaceType.ToDisplayString());
+
+                if (result)
+                {
+                    return true;
+                }
+            }
+
+            {
+                ITypeSymbol currentType = type;
+                while (currentType != null && currentType.TypeKind != TypeKind.Error)
+                {
+                    if (currentType.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, interfaceType)))
+                    {
+                        return true;
+                    }
+                    currentType = currentType.BaseType; // 继续检查父类
+                }
+                //return false;
+            }
+
+            return false;
         }
     }
 }
